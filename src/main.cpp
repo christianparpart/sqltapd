@@ -67,6 +67,8 @@ std::string readstring(int fd) {
 
 int main(int argc, const char* argv[]) {
   try {
+    auto manifest = sqltap::Manifest::loadFromXmlFile("../dwn.xml");
+
     std::string input;
     if (!isatty(STDIN_FILENO))
       input = readstring(STDIN_FILENO);

@@ -20,6 +20,16 @@ include(CMakeDetermineCCompiler)
 option(ENABLE_TESTS "Build unit tests [default: off]" OFF)
 option(ENABLE_EXAMPLES "Includes example plugins and programs [default: off]" OFF)
 
+pkg_check_modules(XZERO REQUIRED "libxzero")
+include_directories(${XZERO_INCLUDE_DIRS})
+link_directories(${XZERO_LIBRARY_DIRS})
+link_libraries(${XZERO_LIBRARIES})
+
+pkg_check_modules(LIBXML REQUIRED "libxml-2.0")
+include_directories(${LIBXML_INCLUDE_DIRS})
+link_directories(${LIBXML_LIBRARY_DIRS})
+link_libraries(${LIBXML_LIBRARIES})
+
 set(CMAKE_CXX_FLAGS "-std=c++0x")                   # C++11
 #set(CMAKE_CXX_FLAGS "-std=c++0x -stdlib=libc++")   # C++11 + libc++
 #set(CMAKE_CXX_FLAGS "-std=c++1y -stdlib=libc++")   # C++14 + libc++

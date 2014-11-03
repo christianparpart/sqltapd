@@ -31,7 +31,16 @@ class ResourceRelation {
                    const std::string& joinFieldName,
                    const std::string& joinFieldLocal,
                    const std::string& joinFieldRemote,
-                   bool joinForeign);
+                   const std::string& joinCondition,
+                   bool joinForeign)
+    : resource_(resource),
+      name_(name),
+      outputName_(outputName),
+      joinFieldName_(joinFieldName),
+      joinFieldLocal_(joinFieldLocal),
+      joinFieldRemote_(joinFieldRemote),
+      joinCondition_(joinCondition),
+      joinForeign_(joinForeign) {}
 
   Resource* resource() const noexcept { return resource_; }
   const std::string& name() const noexcept { return name_; }
@@ -60,14 +69,23 @@ class Resource {
            const std::string& idFieldName,
            const std::string& defaultOrder,
            const std::vector<ResourceField>& fields,
-           const std::vector<ResourceRelation>& relations);
+           const std::vector<ResourceRelation>& relations)
+      : name_(name),
+        tableName_(tableName),
+        idFieldName_(idFieldName),
+        defaultOrder_(defaultOrder),
+        fields_(fields),
+        relations_(relations) {}
 
-  const std::string& name() const noexcept;
-  const std::string& tableName() const noexcept;
-  const std::string& idFieldName() const noexcept;
+  const std::string& name() const noexcept { return name_; }
+  const std::string& tableName() const noexcept { return tableName_; }
+  const std::string& idFieldName() const noexcept { return idFieldName_; }
+  const std::string& defaultOrder() const noexcept { return defaultOrder_; }
+  const std::vector<ResourceField>& fields() const noexcept { return fields_; }
+  const std::vector<ResourceRelation>& relations() const noexcept { return relations_; }
 
-  ResourceField* field(const std::string& name) const;
-  ResourceRelation* relation(const std::string& name) const;
+  const ResourceField* field(const std::string& name) const;
+  const ResourceRelation* relation(const std::string& name) const;
 
  private:
   std::string name_;
@@ -80,8 +98,6 @@ class Resource {
 
 class Manifest {
  public:
-  Manifest();
-
   Manifest(
       std::unordered_map<std::string, std::unique_ptr<Resource>>&& resources,
       std::unordered_map<std::string, Resource*>&& tableToResourceMapping);
@@ -89,10 +105,10 @@ class Manifest {
   Resource* resource(const std::string& resourceName) const;
   std::vector<Resource*> resources() const;
 
-  Resource* findResourceByName(const std::string& resourceName) const;
-  Resource* findResourceByTableName(const std::string& resourceName) const;
+  Resource* findResourceByName(const std::string& name) const;
+  Resource* findResourceByTableName(const std::string& name) const;
 
-  static std::unique_ptr<Manifest> loadXML(const std::string& document);
+  static std::unique_ptr<Manifest> loadFromXmlFile(const std::string& document);
 
  private:
   std::unordered_map<std::string, std::unique_ptr<Resource>> resources_;

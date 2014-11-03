@@ -23,7 +23,7 @@ set(sqltap_SRC
 )
 
 add_executable(sqltapd main.cpp ${sqltap_SRC})
-target_link_libraries(sqltapd ${BASE_LIBRARIES} ${XZERO_LIBRARIES} ${FLOW_LIBRARIES} ${SD_LIBRARIES} ${TCMALLOC_LIBRARIES})
+target_link_libraries(sqltapd ${LIBXML_LIBRARIES} ${XZERO_LIBRARIES} ${SD_LIBRARIES} ${TCMALLOC_LIBRARIES})
 set_target_properties(sqltapd PROPERTIES COMPILE_FLAGS "-fvisibility=hidden -fvisibility-inlines-hidden -DBUILD_X0D=1")
 #set_target_properties(sqltapd PROPERTIES LINK_FLAGS "${BASE_LDFLAGS}")
 install(TARGETS sqltapd RUNTIME DESTINATION sbin)
