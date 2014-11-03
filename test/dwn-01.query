@@ -1,0 +1,15 @@
+# Some sample query
+
+users.findOne(1) {
+  username,
+  email,
+
+  # some dependant query
+  shops.findOne {
+    updated_at
+  }
+}
+
+# SELECT username, email FROM users WHERE id = 1;
+# SELECT updated_at FROM shops WHERE $foreign_key = $dependant_id;
+
