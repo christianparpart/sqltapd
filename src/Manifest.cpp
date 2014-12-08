@@ -31,10 +31,6 @@ Manifest::Manifest(
       tableToResourceMapping_(std::move(tableToResourceMapping_)) {
 }
 
-Resource* Manifest::resource(const std::string& resourceName) const {
-  return findResourceByName(resourceName);
-}
-
 std::vector<Resource*> Manifest::resources() const {
   std::vector<Resource*> result;
 

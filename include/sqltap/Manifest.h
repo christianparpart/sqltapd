@@ -8,6 +8,13 @@
 
 namespace sqltap {
 
+/**
+ * A field value in the Resource.
+ *
+ * A field value directly maps to a column in the database table schema.
+ *
+ * @see Resource
+ */
 class ResourceField {
  public:
   ResourceField(const std::string& name, const std::string& type)
@@ -62,6 +69,12 @@ class ResourceRelation {
   bool joinForeign_;
 };
 
+/**
+ * A Resource directly maps to a row schema in a database table.
+ *
+ * @see ResourceField
+ * @see ResourceRelation
+ */
 class Resource {
  public:
   Resource(const std::string& name,
@@ -96,18 +109,39 @@ class Resource {
   std::vector<ResourceRelation> relations_;
 };
 
+/**
+ * A Manifest defines a set of Resource items.
+ */
 class Manifest {
  public:
   Manifest(
       std::unordered_map<std::string, std::unique_ptr<Resource>>&& resources,
       std::unordered_map<std::string, Resource*>&& tableToResourceMapping);
 
-  Resource* resource(const std::string& resourceName) const;
+  /**
+   * Retrieves a list of all resources (as vector).
+   */
   std::vector<Resource*> resources() const;
 
+  /** Finds a resource by its @p name.
+   *
+   * @return the resource or @c nullptr if not found.
+   */
   Resource* findResourceByName(const std::string& name) const;
+
+  /**
+   * Finds a resource by database table's @p name.
+   *
+   * @return the resource or @c nullptr if not found.
+   */
   Resource* findResourceByTableName(const std::string& name) const;
 
+  /**
+   * Loads a manifest from a given XML file.
+   *
+   * @throw std::runtime_error in any case of runtime error
+   * @throw std::system_error in any case of system error
+   */
   static std::unique_ptr<Manifest> loadFromXmlFile(const std::string& document);
 
  private:
