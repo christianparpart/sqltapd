@@ -67,9 +67,9 @@ std::unique_ptr<Manifest> Manifest::loadFromXmlFile(
   if (doc == nullptr)
     throw std::runtime_error("Could not load schema XML file");
 
-  xmlNode* root = xmlDocGetRootElement(doc);
+  xmlNodePtr root = xmlDocGetRootElement(doc);
 
-  for (xmlNode* n = root->children; n != nullptr; n = n->next) {
+  for (xmlNodePtr n = root->children; n != nullptr; n = n->next) {
     if (n->type != XML_ELEMENT_NODE)
       continue;
 
@@ -97,17 +97,19 @@ std::unique_ptr<Manifest> Manifest::loadFromXmlFile(
       const std::vector<ResourceRelation> relations;
       const std::vector<ResourceField> fields;
 
-      for (xmlNode* cn = n->children; cn; cn = cn->next) {
-        if (xmlStrcmp(cn->name, BAD_CAST "relation") == 0) {
+      for (xmlNodePtr cn = n->children; cn; cn = cn->next) {
+        if (xmlStrcmp(cn->name, BAD_CAST "field") == 0) {
           // TODO
+          // ResourceField field;
+          // fields.push_back(field);
         }
-
-        else if (xmlStrcmp(cn->name, BAD_CAST "field") == 0) {
+        else if (xmlStrcmp(cn->name, BAD_CAST "relation") == 0) {
           // TODO
         }
       }
 
       printf("resource[%s] tableName:%s\n", name.c_str(), tableName.c_str());
+
       resources[name] = std::unique_ptr<Resource>(new Resource(
           name, tableName, idField, defaultOrder, fields, relations));
     }
@@ -120,9 +122,14 @@ std::unique_ptr<Manifest> Manifest::loadFromXmlFile(
   xmlFreeDoc(doc);
   xmlCleanupParser();
 
-  return std::unique_ptr<Manifest>(new Manifest(
-        std::move(resources),
-        std::move(tableToResourceMapping)));
+  // Manifest manifestd(std::move(resources),
+  //                   std::move(tableToResourceMapping));
+
+  std::unique_ptr<Manifest> manifest(new Manifest(
+      std::move(resources),
+      std::move(tableToResourceMapping)));
+
+  return manifest;
 }
 // }}}
 
