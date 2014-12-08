@@ -5,11 +5,14 @@ This is an SQLTap written in C++11, based on the Scala version.
 ### How to Build from Sources
 
 ```
-apt-get install clang++-3.4
+apt-get install clang++-3.4 libxml2-dev
 git clone git@github.com:trapni/sqltapd.git
 cd sqltapd
 make debug
 ```
+
+*Please note*, when running the server (in its WIP-test version), you'll
+need a `schema.xml` in the project root directory.
 
 ### Query Syntax
 
