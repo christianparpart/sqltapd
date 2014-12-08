@@ -35,7 +35,7 @@ class ResourceRelation {
   ResourceRelation(Resource* resource,
                    const std::string& name,
                    const std::string& outputName,
-                   const std::string& joinFieldName,
+                   const std::string& joinField,
                    const std::string& joinFieldLocal,
                    const std::string& joinFieldRemote,
                    const std::string& joinCondition,
@@ -43,7 +43,7 @@ class ResourceRelation {
     : resource_(resource),
       name_(name),
       outputName_(outputName),
-      joinFieldName_(joinFieldName),
+      joinField_(joinField),
       joinFieldLocal_(joinFieldLocal),
       joinFieldRemote_(joinFieldRemote),
       joinCondition_(joinCondition),
@@ -52,7 +52,7 @@ class ResourceRelation {
   Resource* resource() const noexcept { return resource_; }
   const std::string& name() const noexcept { return name_; }
   const std::string& outputName() const noexcept { return outputName_; }
-  const std::string& joinFieldName() const noexcept { return joinFieldName_; }
+  const std::string& joinField() const noexcept { return joinField_; }
   const std::string& joinFieldLocal() const noexcept { return joinFieldLocal_; }
   const std::string& joinFieldRemote() const noexcept { return joinFieldRemote_; }
   const std::string& joinCondition() const noexcept { return joinCondition_; }
@@ -62,7 +62,7 @@ class ResourceRelation {
   Resource* resource_;
   std::string name_;
   std::string outputName_;
-  std::string joinFieldName_;
+  std::string joinField_;
   std::string joinFieldLocal_;
   std::string joinFieldRemote_;
   std::string joinCondition_;
@@ -113,10 +113,23 @@ class Resource {
  * A Manifest defines a set of Resource items.
  */
 class Manifest {
+ private:
+  // disallow copying and default initialization
+  Manifest() = delete;
+  Manifest(const Manifest&) = delete;
+  Manifest& operator=(Manifest&) = delete;
+
  public:
-  Manifest(
-      std::unordered_map<std::string, std::unique_ptr<Resource>>&& resources,
-      std::unordered_map<std::string, Resource*>&& tableToResourceMapping);
+  /**
+   * Initializes the resource manifest with the given mappings.
+   */
+  Manifest(std::unordered_map<std::string, Resource*>&& resources,
+           std::unordered_map<std::string, Resource*>&& tableToResourceMapping);
+
+  /**
+   * Frees up any potentially dynamically created resources.
+   */
+  ~Manifest();
 
   /**
    * Retrieves a list of all resources (as vector).
@@ -145,7 +158,7 @@ class Manifest {
   static std::unique_ptr<Manifest> loadFromXmlFile(const std::string& document);
 
  private:
-  std::unordered_map<std::string, std::unique_ptr<Resource>> resources_;
+  std::unordered_map<std::string, Resource*> resources_;
   std::unordered_map<std::string, Resource*> tableToResourceMapping_;
 };
 

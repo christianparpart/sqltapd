@@ -2,12 +2,16 @@
 #include <sqltap/Manifest.h>
 #include <sqltap/Tokenizer.h>
 #include <sqltap/Parser.h>
+#include <sys/stat.h>
 #include <string>
 #include <istream>
 #include <stdexcept>
+#include <system_error>
 #include <memory>
 #include <sstream>
 #include <unistd.h>
+#include <stdlib.h>
+#include <limits.h>
 
 namespace sqltap {
 
@@ -53,7 +57,7 @@ std::unique_ptr<Result> LinearExecutor::run(Query* query) {
 
 } // namespace sqltap
 
-std::string readstring(int fd) {
+static std::string readstring(int fd) {
   std::ostringstream sstr;
   for (;;) {
     char buf[256];
@@ -65,9 +69,49 @@ std::string readstring(int fd) {
   return sstr.str();
 }
 
+/**
+ * Retrieves the directory depth as a cardinal number.
+ */
+static size_t getDirectoryDepth() {
+  size_t count = 0;
+  char path[PATH_MAX + 1];
+
+  if (getcwd(path, sizeof(path)) == nullptr)
+    throw std::system_error(errno, std::system_category());
+
+  for (const char* rp = path; *rp != '\0'; ++rp)
+    if (*rp == '/')
+      ++count;
+
+  return count;
+}
+
+/**
+ * traverse updir until we found a file with given name or the root dir.
+ */
+static std::string findUpdir(const std::string& fileName) {
+  size_t curDepth = 1;
+  size_t dirDepth = getDirectoryDepth();
+  std::string path = fileName;
+  struct stat st;
+
+  std::string rootpath = "/" + fileName;
+
+  while (stat(path.c_str(), &st) != 0) {
+    path = "../" + path;
+
+    curDepth++;
+    if (curDepth > dirDepth) {
+      return fileName;
+    }
+  }
+
+  return path;
+}
+
 int main(int argc, const char* argv[]) {
   try {
-    auto manifest = sqltap::Manifest::loadFromXmlFile("../../../dwn.xml");
+    auto manifest = sqltap::Manifest::loadFromXmlFile(findUpdir("schema.xml"));
 
     std::string input;
     if (!isatty(STDIN_FILENO))
