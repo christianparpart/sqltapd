@@ -80,6 +80,13 @@ class Resource {
   Resource(const std::string& name,
            const std::string& tableName,
            const std::string& idFieldName,
+           const std::string& defaultOrder)
+      : Resource(name, tableName, idFieldName, defaultOrder, {}, {}) {
+  }
+
+  Resource(const std::string& name,
+           const std::string& tableName,
+           const std::string& idFieldName,
            const std::string& defaultOrder,
            const std::vector<ResourceField>& fields,
            const std::vector<ResourceRelation>& relations)
@@ -100,11 +107,19 @@ class Resource {
   const ResourceField* field(const std::string& name) const;
   const ResourceRelation* relation(const std::string& name) const;
 
+  void setFields(std::vector<ResourceField>&& fields) {
+    fields_ = std::move(fields);
+  }
+
+  void setRelations(std::vector<ResourceRelation>&& relations) {
+    relations_ = std::move(relations);
+  }
+
  private:
   std::string name_;
   std::string tableName_;
   std::string idFieldName_;
-  std::string defaultOrder_; // defaults to "$idFieldName DESC"
+  std::string defaultOrder_;
   std::vector<ResourceField> fields_;
   std::vector<ResourceRelation> relations_;
 };

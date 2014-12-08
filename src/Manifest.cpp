@@ -95,6 +95,91 @@ static std::string getProperty(xmlNodePtr n, const std::string& name) {
 }
 
 // {{{ loadFromXmlFile() impl
+Resource* loadResource(
+    xmlNodePtr n,
+    std::unordered_map<std::string, Resource*>& resources);
+
+/**
+ * Loads a resource from given XML element.
+ *
+ * @param n must be an XML element for a "resource".
+ * @param resources map of already loaded resources.
+ */
+Resource* getResource(
+    const std::string& resourceName,
+    xmlNodePtr root,
+    std::unordered_map<std::string, Resource*>& resources) {
+
+  printf("getResource(%s)\n", resourceName.c_str());
+
+  auto i = resources.find(resourceName);
+  if (i != resources.end())
+    return i->second;
+
+  for (xmlNodePtr n = root->children; n != nullptr; n = n->next) {
+    if (n->type != XML_ELEMENT_NODE)
+      continue;
+
+    if (xmlStrcmp(n->name, BAD_CAST "resource") != 0)
+      continue;
+
+    if (getProperty(n, "name") == resourceName)
+      return loadResource(n, resources);
+  }
+
+  throw std::runtime_error(
+      "Unresolved resource relation. Cannot find resource '" +
+      resourceName + "'.");
+}
+
+Resource* loadResource(
+    xmlNodePtr n,
+    std::unordered_map<std::string, Resource*>& resources) {
+
+  std::string name = getProperty(n, "name");
+  std::string tableName = getProperty(n, "table_name");
+  std::string idField = getProperty(n, "id_field", "id");
+  std::string defaultOrder = getProperty(n, "default_order", idField + " DESC");
+
+  Resource* resource = resources[name] = new Resource(
+      name, tableName, idField, defaultOrder);
+
+  std::vector<ResourceRelation> relations;
+  std::vector<ResourceField> fields;
+
+  //printf("resource[%s] tableName:%s\n", name.c_str(), tableName.c_str());
+
+  for (xmlNodePtr cn = n->children; cn; cn = cn->next) {
+    if (xmlStrcmp(cn->name, BAD_CAST "field") == 0) {
+      std::string fieldName = getProperty(cn, "name");
+      std::string fieldType = getProperty(cn, "type", ""); // XXX unused
+      fields.emplace_back(fieldName, fieldType);
+    }
+    else if (xmlStrcmp(cn->name, BAD_CAST "relation") == 0) {
+      std::string relationName = getProperty(cn, "name");
+      std::string resourceName = getProperty(cn, "resource");
+      //printf("\tresource[%s].relation[%s]\n", name.c_str(), relationName.c_str());
+      std::string outputName = getProperty(cn, "output_name", "");
+      std::string joinField = getProperty(cn, "join_field", "");
+      std::string joinFieldLocal = getProperty(cn, "join_field_local", "");
+      std::string joinFieldRemote = getProperty(cn, "join_field_remote", "");
+      std::string joinCondition = getProperty(cn, "join_cond", "");
+      bool joinForeign = toBool(getProperty(cn, "join_foreign", "true"));
+
+      Resource* resource = getResource(resourceName, n->parent, resources);
+
+      relations.emplace_back(
+          resource, relationName, outputName, joinField,
+          joinFieldLocal, joinFieldRemote, joinCondition, joinForeign);
+    }
+  }
+
+  resource->setFields(std::move(fields));
+  resource->setRelations(std::move(relations));
+
+  return resource;
+}
+
 std::unique_ptr<Manifest> Manifest::loadFromXmlFile(
     const std::string& document) {
 
@@ -112,44 +197,7 @@ std::unique_ptr<Manifest> Manifest::loadFromXmlFile(
       continue;
 
     if (xmlStrcmp(n->name, BAD_CAST "resource") == 0) {
-      std::string name = getProperty(n, "name");
-      std::string tableName = getProperty(n, "table_name");
-      std::string idField = getProperty(n, "id_field", "id");
-      std::string defaultOrder = getProperty(n, "default_order", idField + " DESC");
-
-      std::vector<ResourceRelation> relations;
-      std::vector<ResourceField> fields;
-
-      for (xmlNodePtr cn = n->children; cn; cn = cn->next) {
-        if (xmlStrcmp(cn->name, BAD_CAST "field") == 0) {
-          std::string fieldName = getProperty(cn, "name");
-          std::string fieldType = getProperty(cn, "type", ""); // XXX unused
-          fields.emplace_back(fieldName, fieldType);
-        }
-        else if (xmlStrcmp(cn->name, BAD_CAST "relation") == 0) {
-          std::string relationName = getProperty(cn, "name");
-          std::string resourceName = getProperty(cn, "resource");
-          printf("\tresource[%s].relation[%s]\n", name.c_str(), relationName.c_str());
-          std::string outputName = getProperty(cn, "output_name", "");
-          std::string joinField = getProperty(cn, "join_field", "");
-          std::string joinFieldLocal = getProperty(cn, "join_field_local", "");
-          std::string joinFieldRemote = getProperty(cn, "join_field_remote", "");
-          std::string joinCondition = getProperty(cn, "join_cond", "");
-          bool joinForeign = toBool(getProperty(cn, "join_foreign", "true"));
-
-          Resource* resource = nullptr; // TODO: maybe not filled in yet
-          // XXX maybe add relations to each resource in a 2nd stage.
-
-          relations.emplace_back(
-              resource, relationName, outputName, joinField,
-              joinFieldLocal, joinFieldRemote, joinCondition, joinForeign);
-        }
-      }
-
-      printf("resource[%s] tableName:%s\n", name.c_str(), tableName.c_str());
-
-      resources[name] = new Resource(
-          name, tableName, idField, defaultOrder, fields, relations);
+      loadResource(n, resources);
     }
     else if (xmlStrcmp(n->name, BAD_CAST "ctree") == 0) {
       // TODO: ctree support we can safely ignore in the first milestone.

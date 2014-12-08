@@ -45,24 +45,30 @@ FUNCTION       ::= 'findOne'
                  | 'findAllWhere'
 ```
 
-### TODO
+### TODO: ms1
 
 - [x] lexer
 - [x] parser
 - [x] AST printer
 - [x] Manifest API
-- [ ] Manifest: schema.xml parser
+- [x] Manifest: schema.xml parser (loading resources)
 - [ ] query executor (serialized)
-- [ ] query executor (paralized)
-- [ ] cache API
-- [ ] cache API: memcache backend
+- [ ] query executor (paralized, find out out query dependencies)
 - [ ] HTTP: query API
+- [ ] unit tests
+- [ ] native C extension binding (gem for Ruby) (maybe optional)
+
+### TODO: ms2
+
+- [ ] cache API
+- [ ] cache memcache backend
+- [ ] ctree index loading out of schema.xml
 - [ ] HTTP: cache invalidation API
 - [ ] mysql slave replication listener for cache invalidation
-- [ ] unit tests
-- [ ] native C extension binding (gem for Ruby)
 
 ### Open Questions
 
 - what is `base_score` in schema.xml
 - schema.xml: field.type seems dead code, not really used.
+- currently the schema.xml loader is part of Manifest.cpp: move that out?
+
