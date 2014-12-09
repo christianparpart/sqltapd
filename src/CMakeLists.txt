@@ -22,12 +22,12 @@ set(sqltap_SRC
   DependantQuery.cpp
 )
 
-add_executable(sqltapd main.cpp ${sqltap_SRC})
-target_link_libraries(sqltapd ${LIBXML_LIBRARIES} ${XZERO_LIBRARIES} ${SD_LIBRARIES} ${TCMALLOC_LIBRARIES})
-set_target_properties(sqltapd PROPERTIES COMPILE_FLAGS "-fvisibility=hidden -fvisibility-inlines-hidden -DBUILD_X0D=1")
-#set_target_properties(sqltapd PROPERTIES LINK_FLAGS "${BASE_LDFLAGS}")
+add_library(sqltap SHARED ${sqltap_SRC})
+target_link_libraries(sqltap ${LIBXML_LIBRARIES} ${XZERO_LIBRARIES} ${SD_LIBRARIES} ${TCMALLOC_LIBRARIES})
+# set_target_properties(sqltap PROPERTIES COMPILE_FLAGS "-fvisibility=hidden -fvisibility-inlines-hidden -DBUILD_X0D=1")
+set_target_properties(sqltap PROPERTIES LINK_FLAGS "${BASE_LDFLAGS}")
+
+add_executable(sqltapd main.cpp)
+target_link_libraries(sqltapd sqltap)
 install(TARGETS sqltapd RUNTIME DESTINATION sbin)
 #install(FILES sqltapd.conf-dist DESTINATION ${SYSCONFDIR})
-
-#add_subdirectory(plugins)
-
