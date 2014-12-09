@@ -12,7 +12,8 @@ const ResourceField* Resource::field(const std::string& name) const {
     if (field.name() == name)
       return &field;
 
-  return nullptr;
+  throw std::runtime_error("No field '" + name + "' found in resource '" +
+                           this->name() + "'.");
 }
 
 const ResourceRelation* Resource::relation(const std::string& name) const {
@@ -20,7 +21,8 @@ const ResourceRelation* Resource::relation(const std::string& name) const {
     if (relation.name() == name)
       return &relation;
 
-  return nullptr;
+  throw std::runtime_error("No relation '" + name + "' found in resource '" +
+                           this->name() + "'.");
 }
 // }}}
 

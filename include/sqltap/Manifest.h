@@ -49,7 +49,7 @@ class ResourceRelation {
       joinCondition_(joinCondition),
       joinForeign_(joinForeign) {}
 
-  Resource* resource() const noexcept { return resource_; }
+  const Resource* resource() const noexcept { return resource_; }
   const std::string& name() const noexcept { return name_; }
   const std::string& outputName() const noexcept { return outputName_; }
   const std::string& joinField() const noexcept { return joinField_; }

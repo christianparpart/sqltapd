@@ -138,7 +138,7 @@ void InstructionBuilder::visit(DependantQuery& field) {
 }
 
 // ----------------------------------------------------------------------------
-static void analyze(const Query* query, const sqltap::Manifest* manifest) {
+void analyze(const Query* query, const sqltap::Manifest* manifest) {
   InstructionBuilder analyzer(manifest);
   analyzer.analyze(query);
 }
@@ -206,10 +206,10 @@ static std::string getInput(int argc, const char* argv[]) {
     input = readstring(STDIN_FILENO);
 
   if (input.empty() && argc == 2)
-    return argv[1];
+    input = argv[1];
 
   if (input.empty())
-    return "user.findOne(1){firstname, email, addresses.findOne{*}}";
+    input = "user.findOne(1){firstname, email, addresses.findOne{*}}";
 
   return input;
 }
@@ -228,7 +228,7 @@ int main(int argc, const char* argv[]) {
     auto query = parser.parse();
     printf("query: %s\n\n", query->to_s().c_str());
 
-    sqltap::analyze(query.get(), manifest.get());
+    //sqltap::analyze(query.get(), manifest.get());
 
     // std::unique_ptr<sqltap::Executor> executor(new sqltap::LinearExecutor());
     // executor->run(query.get());

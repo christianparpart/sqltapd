@@ -42,6 +42,10 @@ bool Tokenizer::next() {
   stringValue_ += static_cast<char>(currentChar());
 
   switch (currentChar()) {
+    case '$':
+      token_ = Token::Dollar;
+      nextChar();
+      return true;
     case '*':
       token_ = Token::Star;
       nextChar();

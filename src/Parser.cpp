@@ -37,24 +37,26 @@ std::unique_ptr<Query> Parser::parseQuery(const std::string& relationName,
   std::unique_ptr<Query> query(new Query(
         relationName, functionName, dependantQuery));
 
+  if (dependantQuery != nullptr) {
+    const ResourceRelation* relation = dependantQuery->resource()->relation(relationName);
+    const Resource* resource = relation->resource();
+    query->setResource(resource);
+  } else {
+    const Resource* resource = manifest_->findResourceByName(relationName);
+    query->setResource(resource);
+  }
+
   ParameterList paramList;
-  if (tokenizer()->token() == Token::RndOpen) {
-    nextToken();
-    if (!consumeIf(Token::RndClose)) {
-      parseParamList(&paramList);
-      consume(Token::RndClose);
-    }
+  if (consumeIf(Token::RndOpen)) {
+    parseParamList(&paramList);
+    consume(Token::RndClose);
   }
   query->setParams(std::move(paramList));
 
   FieldList fieldList;
-  if (tokenizer()->token() == Token::SetOpen) {
-    nextToken();
-    if (!consumeIf(Token::SetClose)) {
-      parseFieldList(&fieldList, query.get());
-      consume(Token::SetClose);
-    }
-  }
+  consume(Token::SetOpen);
+  parseFieldList(&fieldList, query.get());
+  consume(Token::SetClose);
   query->setFields(std::move(fieldList));
 
   return query;
@@ -95,12 +97,11 @@ void Parser::parseFieldList(FieldList* list, Query* query) {
 }
 
 void Parser::parseField(FieldList* list, Query* query) {
+  assert(query->resource() != nullptr);
+
   switch (tokenizer()->token()) {
     case Token::Star:
       nextToken();
-      assert(query->resource() != nullptr);
-      printf("parseField(): *: resource(%p)\n", query->resource());
-      printf("parseField(): *: resource.fields.size() %zu\n", query->resource()->fields().size());
       for (const ResourceField& field: query->resource()->fields()) {
         list->emplace_back(new FieldValue(field.name()));
       }
@@ -115,7 +116,9 @@ void Parser::parseField(FieldList* list, Query* query) {
         list->push_back(std::unique_ptr<Field>(new DependantQuery(
             parseQuery(ident, query))));
       } else {
-        list->push_back(std::unique_ptr<Field>(new FieldValue(ident)));
+        const ResourceField* field = query->resource()->field(ident);
+
+        list->push_back(std::unique_ptr<Field>(new FieldValue(field->name())));
       }
       break;
     }

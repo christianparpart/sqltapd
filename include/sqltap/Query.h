@@ -33,7 +33,7 @@ class Query {
 
   void setParams(ParameterList&& params) { params_ = std::move(params); }
   void setFields(FieldList&& fields) { fields_ = std::move(fields); }
-  void setResource(const Resource* resource);
+  void setResource(const Resource* resource) { resource_ = resource; }
 
   std::string to_s() const;
 
