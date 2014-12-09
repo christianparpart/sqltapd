@@ -94,3 +94,9 @@ install(
 
 #add_subdirectory(doc)
 add_subdirectory(src)
+add_subdirectory(test)
+
+add_custom_target(test
+    COMMAND ${CMAKE_BINARY_DIR}/test/test-sqltap --gtest_color=yes
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/test
+)
