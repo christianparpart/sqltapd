@@ -4,7 +4,7 @@ project(sqltap)
 set(SQLTAP_NAME "sqltap")
 set(SQLTAP_VERSION "0.0.0")
 set(SQLTAP_HOMEPAGE_URL "http://xzero.io/")
-set(SQLTAP_BUGTRACKER_URL "https://github.com/xzero/libxzero/issues/")
+set(SQLTAP_BUGTRACKER_URL "https://github.com/trapni/sqltapd/issues/")
 
 include(FindPkgConfig)
 include(FindDoxygen)

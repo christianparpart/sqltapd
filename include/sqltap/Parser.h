@@ -8,10 +8,11 @@
 namespace sqltap {
 
 class Tokenizer;
+class Manifest;
 
 class Parser {
  public:
-  explicit Parser(Tokenizer* tokenizer);
+  explicit Parser(Tokenizer* tokenizer, Manifest* manifest);
 
   std::unique_ptr<Query> parse();
 
@@ -21,15 +22,19 @@ class Parser {
 
   std::string consume(Token token);
   bool consumeIf(Token token);
+
   std::unique_ptr<Query> parseQuery();
+  std::unique_ptr<Query> parseQuery(const std::string& relation,
+                                    Query* dependantQuery);
+
   void parseParamList(ParameterList* list);
   void parseParam(ParameterList* list);
-  void parseFieldList(FieldList* list);
-  void parseField(FieldList* list);
-  std::unique_ptr<Query> parseDependantQuery(const std::string& relation);
+  void parseFieldList(FieldList* list, Query* query);
+  void parseField(FieldList* list, Query* query);
 
  private:
   Tokenizer* tokenizer_;
+  Manifest* manifest_;
 };
 
 } // namespace sqltap

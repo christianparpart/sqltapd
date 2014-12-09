@@ -1,9 +1,14 @@
 #include <sqltap/Query.h>
+#include <sqltap/QueryVisitor.h>
 #include <sqltap/Parameter.h>
 #include <sqltap/Field.h>
 #include <sstream>
 
 namespace sqltap {
+
+void Query::accept(QueryVisitor& v) {
+  return v.visit(*this);
+}
 
 std::string Query::to_s() const {
   std::ostringstream sstr;

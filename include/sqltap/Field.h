@@ -6,6 +6,8 @@
 
 namespace sqltap {
 
+class QueryVisitor;
+
 /**
  * Query Output Field.
  *
@@ -14,6 +16,7 @@ namespace sqltap {
 class Field {
  public:
   virtual ~Field() {}
+  virtual void accept(QueryVisitor& v) = 0;
   virtual std::string to_s() const = 0;
 };
 

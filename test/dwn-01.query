@@ -1,6 +1,27 @@
 # Some sample query
 
-users.findOne(1) {
+# -----------------------------------------------------------------------------
+# 1) SELECT users.`username`, `users.email` FROM users WHERE id = 1;
+# 2) SELECT shops.`updated_at` FROM shops WHERE user_id = 1;
+# 3) SELECT address.* FROM address WHERE user_id = 1 AND standard = 1;
+# 4) SELECT products.`id` FROM products WHERE user_id = 1;
+# 5) SELECT images.* FROM images WHERE imageable_id = $product.id$ AND imageable_type = 'Product';
+     # for each #4's products.`id`.
+# -----------------------------------------------------------------------------
+
+# FindInstr("users", "id", 1, {"username"})
+# FindInstr("shops", "user_id", 1, {"updated_at"})
+# FindInstr("address", "user_id", 1, {*}, "standard = 1")
+# FindInstr("products", "user_id", 1, {"id"})
+# FindInstr("images", "imageable_id", $products.id, {"id"}, "imageable_type = 'Product')
+
+# we can execute everything as soon as it's not having any dependency
+# every dependant query could register to the dependancy as a completion
+# listener to get notified as soon as its ready to execute
+# The default listener should be the onComplete hook to tell the final
+# response generator to format the response into json.
+
+user.findOne(1) {
   username,
   email,
 
@@ -9,10 +30,13 @@ users.findOne(1) {
     updated_at
   },
 
-  addresses.findAll{*}
+  addresses.findAll {*},
+
+  products.findAll {
+    id,
+    images.findAll {
+      # images.imageable_id = products.id AND images.imageable_type = 'Product'
+      id
+    }
+  }
 }
-
-# SELECT `shops.updated_at` FROM shops WHERE user_id = 1;
-# SELECT `users.username`, `users.email` FROM users WHERE id = 1;
-# SELECT `addresses.XXX` FROM addresses WHERE user_id = 1 AND standard = 1;
-

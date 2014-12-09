@@ -42,7 +42,7 @@ ObjectID       ::= NUMBER
 MODEL          ::= <table name>
 FUNCTION       ::= 'findOne'
                  | 'findAll'
-                 | 'findAllWhere'
+                 | 'findAllWhere'   // (string [, int [, int]])
 ```
 
 ### TODO: ms1
@@ -65,6 +65,18 @@ FUNCTION       ::= 'findOne'
 - [ ] ctree index loading out of schema.xml
 - [ ] HTTP: cache invalidation API
 - [ ] mysql slave replication listener for cache invalidation
+
+### Ideas
+
+- create statistics that show what functions are used the most
+  (findOne,findAll,findAllWhere,count,...)
+- create stats over the query frequency (params masked out)
+- put queries in the queue for at most N secs on error iff sql slave is
+  behind N secs
+- simplify schema.xml:
+  - remove field types, as they're unused (and could be inferred anyways)
+  - remove fields from xml completely, could be inferred from the table schema
+    using a DESCRIBE `table_name`;
 
 ### Open Questions
 

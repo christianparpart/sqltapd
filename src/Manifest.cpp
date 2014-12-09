@@ -25,10 +25,10 @@ const ResourceRelation* Resource::relation(const std::string& name) const {
 // }}}
 
 Manifest::Manifest(
-    std::unordered_map<std::string, Resource*>&& resources,
-    std::unordered_map<std::string, Resource*>&& tableToResourceMapping)
-    : resources_(std::move(resources)),
-      tableToResourceMapping_(std::move(tableToResourceMapping_)) {
+    std::unordered_map<std::string, Resource*>* resources,
+    std::unordered_map<std::string, Resource*>* tableToResourceMapping)
+    : resources_(resources),
+      tableToResourceMapping_(tableToResourceMapping) {
 }
 
 Manifest::~Manifest() {
@@ -37,23 +37,23 @@ Manifest::~Manifest() {
 std::vector<Resource*> Manifest::resources() const {
   std::vector<Resource*> result;
 
-  for (const auto& r: resources_)
+  for (const auto& r: *resources_)
     result.push_back(r.second);
 
   return result;
 }
 
 Resource* Manifest::findResourceByName(const std::string& name) const {
-  auto i = resources_.find(name);
-  if (i != resources_.end())
+  auto i = resources_->find(name);
+  if (i != resources_->end())
     return i->second;
 
   return nullptr;
 }
 
 Resource* Manifest::findResourceByTableName(const std::string& name) const {
-  auto i = tableToResourceMapping_.find(name);
-  if (i != tableToResourceMapping_.end())
+  auto i = tableToResourceMapping_->find(name);
+  if (i != tableToResourceMapping_->end())
     return i->second;
 
   return nullptr;
@@ -97,23 +97,25 @@ static std::string getProperty(xmlNodePtr n, const std::string& name) {
 // {{{ loadFromXmlFile() impl
 Resource* loadResource(
     xmlNodePtr n,
-    std::unordered_map<std::string, Resource*>& resources);
+    std::unordered_map<std::string, Resource*>* resources);
 
 /**
- * Loads a resource from given XML element.
+ * Gets a resource by given name from either resource map of loads it on demand
+ * from XML.
  *
  * @param n must be an XML element for a "resource".
  * @param resources map of already loaded resources.
+ * @param root the XML root element node to use if it's not in @p resurces yet.
  */
 Resource* getResource(
     const std::string& resourceName,
-    xmlNodePtr root,
-    std::unordered_map<std::string, Resource*>& resources) {
+    std::unordered_map<std::string, Resource*>* resources,
+    xmlNodePtr root) {
 
-  printf("getResource(%s)\n", resourceName.c_str());
+  //printf("getResource(%s)\n", resourceName.c_str());
 
-  auto i = resources.find(resourceName);
-  if (i != resources.end())
+  auto i = resources->find(resourceName);
+  if (i != resources->end())
     return i->second;
 
   for (xmlNodePtr n = root->children; n != nullptr; n = n->next) {
@@ -134,14 +136,14 @@ Resource* getResource(
 
 Resource* loadResource(
     xmlNodePtr n,
-    std::unordered_map<std::string, Resource*>& resources) {
+    std::unordered_map<std::string, Resource*>* resources) {
 
   std::string name = getProperty(n, "name");
   std::string tableName = getProperty(n, "table_name");
   std::string idField = getProperty(n, "id_field", "id");
   std::string defaultOrder = getProperty(n, "default_order", idField + " DESC");
 
-  Resource* resource = resources[name] = new Resource(
+  Resource* resource = (*resources)[name] = new Resource(
       name, tableName, idField, defaultOrder);
 
   std::vector<ResourceRelation> relations;
@@ -166,7 +168,7 @@ Resource* loadResource(
       std::string joinCondition = getProperty(cn, "join_cond", "");
       bool joinForeign = toBool(getProperty(cn, "join_foreign", "true"));
 
-      Resource* resource = getResource(resourceName, n->parent, resources);
+      Resource* resource = getResource(resourceName, resources, n->parent);
 
       relations.emplace_back(
           resource, relationName, outputName, joinField,
@@ -183,8 +185,11 @@ Resource* loadResource(
 std::unique_ptr<Manifest> Manifest::loadFromXmlFile(
     const std::string& document) {
 
-  std::unordered_map<std::string, Resource*> resources;
-  std::unordered_map<std::string, Resource*> tableToResourceMapping;
+  std::unordered_map<std::string, Resource*>* resources;
+  std::unordered_map<std::string, Resource*>* tableToResourceMapping;
+
+  resources = new std::unordered_map<std::string, Resource*>();
+  tableToResourceMapping = new std::unordered_map<std::string, Resource*>();
 
   xmlDocPtr doc = xmlReadFile(document.c_str(), nullptr, 0);
   if (doc == nullptr)
@@ -207,12 +212,13 @@ std::unique_ptr<Manifest> Manifest::loadFromXmlFile(
   xmlFreeDoc(doc);
   xmlCleanupParser();
 
-  Manifest* m = new Manifest(
-      std::move(resources),
-      std::move(tableToResourceMapping));
+  Manifest* m = new Manifest(resources, tableToResourceMapping);
 
-  std::unique_ptr<Manifest> manifest(m);
-  return manifest;
+  // Manifest* m = new Manifest(
+  //     std::move(resources),
+  //     std::move(tableToResourceMapping));
+
+  return std::unique_ptr<Manifest>(m);
 }
 // }}}
 

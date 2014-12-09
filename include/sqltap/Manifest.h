@@ -138,8 +138,8 @@ class Manifest {
   /**
    * Initializes the resource manifest with the given mappings.
    */
-  Manifest(std::unordered_map<std::string, Resource*>&& resources,
-           std::unordered_map<std::string, Resource*>&& tableToResourceMapping);
+  Manifest(std::unordered_map<std::string, Resource*>* resources,
+           std::unordered_map<std::string, Resource*>* tableToResourceMapping);
 
   /**
    * Frees up any potentially dynamically created resources.
@@ -173,8 +173,8 @@ class Manifest {
   static std::unique_ptr<Manifest> loadFromXmlFile(const std::string& document);
 
  private:
-  std::unordered_map<std::string, Resource*> resources_;
-  std::unordered_map<std::string, Resource*> tableToResourceMapping_;
+  std::unordered_map<std::string, Resource*>* resources_;
+  std::unordered_map<std::string, Resource*>* tableToResourceMapping_;
 };
 
 } // namespace sqltap

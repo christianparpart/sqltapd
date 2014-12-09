@@ -4,12 +4,16 @@
 #include <sqltap/AllFields.h>
 #include <sqltap/FieldValue.h>
 #include <sqltap/DependantQuery.h>
+#include <sqltap/Manifest.h>
+#include <cassert>
 #include <memory>
 #include <string>
 
 namespace sqltap {
 
-Parser::Parser(Tokenizer* tokenizer) : tokenizer_(tokenizer) {
+Parser::Parser(Tokenizer* tokenizer, Manifest* manifest)
+    : tokenizer_(tokenizer),
+      manifest_(manifest) {
 }
 
 std::unique_ptr<Query> Parser::parse() {
@@ -19,13 +23,19 @@ std::unique_ptr<Query> Parser::parse() {
 
 // relation '.' function '(' ParameterList ')' '{' FieldList '}'
 std::unique_ptr<Query> Parser::parseQuery() {
-  std::string relation = consume(Token::Ident);
-  return parseDependantQuery(relation);
+  std::string resourceName = consume(Token::Ident);
+
+  consume(Token::Dot);
+
+  return parseQuery(resourceName, nullptr);
 }
 
-std::unique_ptr<Query> Parser::parseDependantQuery(const std::string& relation) {
-  consume(Token::Dot);
+std::unique_ptr<Query> Parser::parseQuery(const std::string& relationName,
+    Query* dependantQuery) {
   std::string functionName = consume(Token::Ident);
+
+  std::unique_ptr<Query> query(new Query(
+        relationName, functionName, dependantQuery));
 
   ParameterList paramList;
   if (tokenizer()->token() == Token::RndOpen) {
@@ -35,19 +45,19 @@ std::unique_ptr<Query> Parser::parseDependantQuery(const std::string& relation) 
       consume(Token::RndClose);
     }
   }
+  query->setParams(std::move(paramList));
 
   FieldList fieldList;
   if (tokenizer()->token() == Token::SetOpen) {
     nextToken();
     if (!consumeIf(Token::SetClose)) {
-      parseFieldList(&fieldList);
+      parseFieldList(&fieldList, query.get());
       consume(Token::SetClose);
     }
   }
+  query->setFields(std::move(fieldList));
 
-  return std::unique_ptr<Query>(new Query(
-      relation, functionName,
-      std::move(paramList), std::move(fieldList)));
+  return query;
 }
 
 void Parser::parseParamList(ParameterList* list) {
@@ -58,15 +68,18 @@ void Parser::parseParamList(ParameterList* list) {
 
 void Parser::parseParam(ParameterList* list) {
   switch (tokenizer()->token()) {
+    case Token::Dollar:
+      //list->emplace_back(new DependantParameter());
+      nextToken();
+      break;
+
     case Token::String:
-      list->push_back(std::unique_ptr<Parameter>(
-            new StringParameter(tokenizer()->stringValue())));
+      list->emplace_back(new StringParameter(tokenizer()->stringValue()));
       nextToken();
       break;
 
     case Token::Number:
-      list->push_back(std::unique_ptr<Parameter>(
-            new NumberParameter(tokenizer()->numberValue())));
+      list->emplace_back(new NumberParameter(tokenizer()->numberValue()));
       nextToken();
       break;
 
@@ -75,23 +88,22 @@ void Parser::parseParam(ParameterList* list) {
   }
 }
 
-void Parser::parseFieldList(FieldList* list) {
-  parseField(list);
+void Parser::parseFieldList(FieldList* list, Query* query) {
+  parseField(list, query);
   while (consumeIf(Token::Comma))
-    parseField(list);
+    parseField(list, query);
 }
 
-void Parser::parseField(FieldList* list) {
+void Parser::parseField(FieldList* list, Query* query) {
   switch (tokenizer()->token()) {
-    // TODO
-    // case Token::Dollar:
-    //   list->push_back(std::unique_ptr<Field>(new DependantField()));
-    //   nextToken();
-    //   break;
-
     case Token::Star:
-      list->push_back(std::unique_ptr<Field>(new AllFields()));
       nextToken();
+      assert(query->resource() != nullptr);
+      printf("parseField(): *: resource(%p)\n", query->resource());
+      printf("parseField(): *: resource.fields.size() %zu\n", query->resource()->fields().size());
+      for (const ResourceField& field: query->resource()->fields()) {
+        list->emplace_back(new FieldValue(field.name()));
+      }
       break;
 
     case Token::Ident: {
@@ -99,8 +111,9 @@ void Parser::parseField(FieldList* list) {
       nextToken();
 
       if (tokenizer()->token() == Token::Dot) {
+        consume(Token::Dot);
         list->push_back(std::unique_ptr<Field>(new DependantQuery(
-            parseDependantQuery(ident))));
+            parseQuery(ident, query))));
       } else {
         list->push_back(std::unique_ptr<Field>(new FieldValue(ident)));
       }
