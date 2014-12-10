@@ -1,12 +1,6 @@
 #include <gtest/gtest.h>
 #include <sqltap/Tokenizer.h>
 
-#include <iostream>
-#include <cstdlib>
-#include <cctype>
-#include <cassert>
-#include <strings.h>
-
 using namespace sqltap;
 
 TEST(Tokenizer, shouldRecognizeEof) {
@@ -87,6 +81,58 @@ TEST(Tokenizer, shouldRecognizeSetClose) {
   ASSERT_TRUE("}" == t.stringValue());
 }
 
+TEST(Tokenizer, next) {
+  Tokenizer t("foo (");
+  ASSERT_TRUE("foo" == t.stringValue());
+  t.next();
+  ASSERT_TRUE("(" == t.stringValue());
+  ASSERT_FALSE(t.next());
+}
+
+TEST(Tokenizer, operatorPlusPlus) {
+  Tokenizer t("foo (");
+  ASSERT_TRUE("foo" == t.stringValue());
+  t++;
+  ASSERT_TRUE("(" == t.stringValue());
+}
+
+TEST(Tokenizer, offset) {
+  Tokenizer t("foo (");
+  ASSERT_TRUE(3 == t.offset());
+  t.next();
+  ASSERT_TRUE(5 == t.offset());
+  t.next();
+  ASSERT_TRUE(5 == t.offset());
+}
+
+TEST(Tokenizer, line) {
+  Tokenizer t("foo \nbar");
+  ASSERT_TRUE(1 == t.line());
+  t.next();
+  ASSERT_TRUE(2 == t.line());
+  t.next();
+  ASSERT_TRUE(2 == t.line());
+}
+
+TEST(Tokenizer, column) {
+  Tokenizer t("foo (");
+  ASSERT_TRUE(3 == t.column());
+  t.next();
+  ASSERT_TRUE(5 == t.column());
+  t.next();
+  ASSERT_TRUE(5 == t.column());
+}
+
+TEST(Tokenizer, reset) {
+  Tokenizer t("foo (");
+  ASSERT_TRUE("foo" == t.stringValue());
+  t.next();
+  ASSERT_TRUE("(" == t.stringValue());
+  t.reset();
+  ASSERT_TRUE("foo" == t.stringValue());
+  t.next();
+  ASSERT_TRUE("(" == t.stringValue());
+}
 
 TEST(Tokenizer, shouldTokenizeCorrectly) {
   Tokenizer t("user.findOne(1) { username, email }");
